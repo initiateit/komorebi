@@ -61,6 +61,7 @@ use crate::core::SocketMessage;
 use crate::core::StackbarLabel;
 use crate::core::StackbarMode;
 use crate::core::WindowContainerBehaviour;
+use crate::core::StackbarPosition;
 use crate::core::WindowManagementBehaviour;
 use crate::core::config_generation::ApplicationConfiguration;
 use crate::core::config_generation::ApplicationConfigurationGenerator;
@@ -78,6 +79,8 @@ use crate::stackbar_manager::STACKBAR_FONT_FAMILY;
 use crate::stackbar_manager::STACKBAR_FONT_SIZE;
 use crate::stackbar_manager::STACKBAR_LABEL;
 use crate::stackbar_manager::STACKBAR_MODE;
+use crate::stackbar_manager::STACKBAR_POSITION;
+use crate::stackbar_manager::STACKBAR_VERTICAL_WIDTH;
 use crate::stackbar_manager::STACKBAR_TAB_BACKGROUND_COLOUR;
 use crate::stackbar_manager::STACKBAR_TAB_HEIGHT;
 use crate::stackbar_manager::STACKBAR_TAB_WIDTH;
@@ -807,6 +810,14 @@ pub struct StackbarConfig {
     /// Stackbar tab configuration options
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tabs: Option<TabsConfig>,
+    /// Position of the stackbar relative to the container
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "schemars", schemars(extend("default" = StackbarPosition::Top)))]
+    pub position: Option<StackbarPosition>,
+    /// Width of the stackbar when its position is `Left` or `Right`
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "schemars", schemars(extend("default" = 150)))]
+    pub vertical_width: Option<i32>,
 }
 
 impl From<&WindowManager> for StaticConfig {
@@ -1161,6 +1172,14 @@ impl StaticConfig {
 
             if let Some(mode) = &stackbar.mode {
                 STACKBAR_MODE.store(*mode);
+            }
+
+            if let Some(position) = &stackbar.position {
+                STACKBAR_POSITION.store(*position);
+            }
+
+            if let Some(vwidth) = &stackbar.vertical_width {
+                STACKBAR_VERTICAL_WIDTH.store(*vwidth, Ordering::SeqCst);
             }
 
             #[allow(clippy::assigning_clones)]

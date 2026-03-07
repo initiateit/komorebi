@@ -32,8 +32,11 @@ use crate::lockable_sequence::LockableSequence;
 use crate::ring::Ring;
 use crate::should_act;
 use crate::stackbar_manager;
+use crate::stackbar_manager::STACKBAR_POSITION;
 use crate::stackbar_manager::STACKBAR_TAB_HEIGHT;
+use crate::stackbar_manager::STACKBAR_VERTICAL_WIDTH;
 use crate::static_config::WorkspaceConfig;
+use crate::core::StackbarPosition;
 use crate::window::Window;
 use crate::window::WindowDetails;
 use crate::windows_api::WindowsApi;
@@ -616,11 +619,20 @@ impl Workspace {
                         layout.add_padding(border_width);
 
                         if stackbar_manager::should_have_stackbar(window_count) {
-                            let tab_height = STACKBAR_TAB_HEIGHT.load(Ordering::SeqCst);
-                            let total_height = tab_height + container_padding;
-
-                            layout.top += total_height;
-                            layout.bottom -= total_height;
+                            match STACKBAR_POSITION.load() {
+                                StackbarPosition::Top => {
+                                    let tab_height = STACKBAR_TAB_HEIGHT.load(Ordering::SeqCst);
+                                    let total_offset = tab_height + container_padding;
+                                    layout.top += total_offset;
+                                    layout.bottom -= total_offset;
+                                }
+                                StackbarPosition::Left => {
+                                    let bar_width = STACKBAR_VERTICAL_WIDTH.load(Ordering::SeqCst);
+                                    let total_offset = bar_width + container_padding;
+                                    layout.left += total_offset;
+                                    layout.right -= total_offset;
+                                }
+                            }
                         }
 
                         for window in container.windows() {

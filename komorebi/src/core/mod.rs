@@ -306,6 +306,18 @@ pub enum StackbarLabel {
 }
 
 #[derive(
+    Default, Debug, Copy, Clone, Eq, PartialEq, Display, Serialize, Deserialize, ValueEnum,
+)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+/// Stackbar position
+pub enum StackbarPosition {
+    #[default]
+    Top,
+    Left,
+}
+
+
+#[derive(
     Default, Copy, Clone, Debug, Eq, PartialEq, Display, Serialize, Deserialize, ValueEnum,
 )]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]

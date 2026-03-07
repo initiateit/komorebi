@@ -59,6 +59,7 @@ use std::time::Duration;
 use strum::Display;
 use strum::EnumString;
 use windows::Win32::Foundation::HWND;
+use windows::Win32::UI::WindowsAndMessaging::HICON;
 
 pub static MINIMUM_WIDTH: AtomicI32 = AtomicI32::new(0);
 pub static MINIMUM_HEIGHT: AtomicI32 = AtomicI32::new(0);
@@ -738,6 +739,10 @@ impl Window {
 
     pub fn class(self) -> eyre::Result<String> {
         WindowsApi::real_window_class_w(self.hwnd)
+    }
+
+    pub fn icon(self) -> eyre::Result<HICON> {
+        WindowsApi::window_icon(self.hwnd)
     }
 
     pub fn is_cloaked(self) -> eyre::Result<bool> {

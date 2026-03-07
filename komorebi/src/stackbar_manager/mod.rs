@@ -6,6 +6,7 @@ use crate::WindowsApi;
 use crate::container::Container;
 use crate::core::StackbarLabel;
 use crate::core::StackbarMode;
+use crate::core::StackbarPosition;
 use crate::stackbar_manager::stackbar::Stackbar;
 use crossbeam_channel::Receiver;
 use crossbeam_channel::Sender;
@@ -30,6 +31,8 @@ pub static STACKBAR_TAB_HEIGHT: AtomicI32 = AtomicI32::new(40);
 pub static STACKBAR_TAB_WIDTH: AtomicI32 = AtomicI32::new(200);
 pub static STACKBAR_LABEL: AtomicCell<StackbarLabel> = AtomicCell::new(StackbarLabel::Title);
 pub static STACKBAR_MODE: AtomicCell<StackbarMode> = AtomicCell::new(StackbarMode::Never);
+pub static STACKBAR_POSITION: AtomicCell<StackbarPosition> = AtomicCell::new(StackbarPosition::Top);
+pub static STACKBAR_VERTICAL_WIDTH: AtomicI32 = AtomicI32::new(40);
 
 pub static STACKBAR_TEMPORARILY_DISABLED: AtomicBool = AtomicBool::new(false);
 

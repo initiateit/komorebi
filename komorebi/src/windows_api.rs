@@ -140,6 +140,16 @@ use windows::Win32::UI::WindowsAndMessaging::WINDOW_LONG_PTR_INDEX;
 use windows::Win32::UI::WindowsAndMessaging::WM_CLOSE;
 use windows::Win32::UI::WindowsAndMessaging::WNDCLASSW;
 use windows::Win32::UI::WindowsAndMessaging::WNDENUMPROC;
+use windows::Win32::UI::WindowsAndMessaging::GCLP_HICON;
+use windows::Win32::UI::WindowsAndMessaging::GCLP_HICONSM;
+use windows::Win32::UI::WindowsAndMessaging::WM_GETICON;
+use windows::Win32::UI::WindowsAndMessaging::ICON_BIG;
+use windows::Win32::UI::WindowsAndMessaging::ICON_SMALL;
+use windows::Win32::UI::WindowsAndMessaging::ICON_SMALL2;
+use windows::Win32::UI::WindowsAndMessaging::SendMessageTimeoutW;
+use windows::Win32::UI::WindowsAndMessaging::SMTO_ABORTIFHUNG;
+use windows::Win32::UI::WindowsAndMessaging::GetClassLongPtrW;
+use windows::Win32::UI::WindowsAndMessaging::HICON;
 use windows::Win32::UI::WindowsAndMessaging::WS_DISABLED;
 use windows::Win32::UI::WindowsAndMessaging::WS_EX_NOACTIVATE;
 use windows::Win32::UI::WindowsAndMessaging::WS_EX_TOOLWINDOW;
@@ -742,6 +752,57 @@ impl WindowsApi {
     }
 
     #[allow(dead_code)]
+    pub fn window_icon(hwnd: isize) -> eyre::Result<HICON> {
+        let hwnd = HWND(as_ptr!(hwnd));
+        
+        // 1. Try WM_GETICON (ICON_SMALL2)
+        let mut icon_res: usize = 0;
+        unsafe {
+            SendMessageTimeoutW(hwnd, WM_GETICON, WPARAM(ICON_SMALL2 as usize), LPARAM(0), SMTO_ABORTIFHUNG, 50, Some(&mut icon_res));
+        }
+        if icon_res != 0 {
+            return Ok(HICON(as_ptr!(icon_res)));
+        }
+
+        // 2. Try WM_GETICON (ICON_SMALL)
+        unsafe {
+            SendMessageTimeoutW(hwnd, WM_GETICON, WPARAM(ICON_SMALL as usize), LPARAM(0), SMTO_ABORTIFHUNG, 50, Some(&mut icon_res));
+        }
+        if icon_res != 0 {
+            return Ok(HICON(as_ptr!(icon_res)));
+        }
+
+        // 3. Try WM_GETICON (ICON_BIG)
+        unsafe {
+            SendMessageTimeoutW(hwnd, WM_GETICON, WPARAM(ICON_BIG as usize), LPARAM(0), SMTO_ABORTIFHUNG, 50, Some(&mut icon_res));
+        }
+        if icon_res != 0 {
+            return Ok(HICON(as_ptr!(icon_res)));
+        }
+
+        // 4. Try GCLP_HICONSM
+        #[cfg(target_pointer_width = "64")]
+        let mut class_icon = unsafe { GetClassLongPtrW(hwnd, GCLP_HICONSM) };
+        #[cfg(target_pointer_width = "32")]
+        let mut class_icon = unsafe { windows::Win32::UI::WindowsAndMessaging::GetClassLongW(hwnd, GCLP_HICONSM) } as usize;
+        
+        if class_icon != 0 {
+            return Ok(HICON(as_ptr!(class_icon)));
+        }
+
+        // 5. Try GCLP_HICON
+        #[cfg(target_pointer_width = "64")]
+        { class_icon = unsafe { GetClassLongPtrW(hwnd, GCLP_HICON) }; }
+        #[cfg(target_pointer_width = "32")]
+        { class_icon = unsafe { windows::Win32::UI::WindowsAndMessaging::GetClassLongW(hwnd, GCLP_HICON) } as usize; }
+        
+        if class_icon != 0 {
+            return Ok(HICON(as_ptr!(class_icon)));
+        }
+
+        bail!("could not get window icon");
+    }
+
     pub fn top_visible_window() -> eyre::Result<isize> {
         let hwnd = Self::top_window()?;
         let mut next_hwnd = hwnd;
