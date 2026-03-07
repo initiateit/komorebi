@@ -1,29 +1,21 @@
 use crate::DEFAULT_CONTAINER_PADDING;
-use crate::WINDOWS_11;
 use crate::WindowsApi;
 use crate::border_manager::BORDER_OFFSET;
 use crate::border_manager::BORDER_WIDTH;
-use crate::border_manager::STYLE;
 use crate::container::Container;
-use crate::core::BorderStyle;
 use crate::core::Rect;
 use crate::core::StackbarLabel;
 use crate::core::StackbarPosition;
-use crate::stackbar_manager::STACKBAR_FOCUSED_TEXT_COLOUR;
-use crate::stackbar_manager::STACKBAR_FONT_FAMILY;
-use crate::stackbar_manager::STACKBAR_FONT_SIZE;
 use crate::stackbar_manager::STACKBAR_LABEL;
-use crate::stackbar_manager::STACKBAR_TAB_BACKGROUND_COLOUR;
+use crate::stackbar_manager::STACKBAR_TAB_FOCUSED_BACKGROUND_COLOUR;
+use crate::stackbar_manager::STACKBAR_TAB_UNFOCUSED_BACKGROUND_COLOUR;
 use crate::stackbar_manager::STACKBAR_TAB_HEIGHT;
 use crate::stackbar_manager::STACKBAR_TAB_WIDTH;
 use crate::stackbar_manager::STACKBAR_VERTICAL_WIDTH;
 use crate::stackbar_manager::STACKBAR_POSITION;
-use crate::stackbar_manager::STACKBAR_UNFOCUSED_TEXT_COLOUR;
 use crate::stackbar_manager::STACKBARS_CONTAINERS;
 use crate::windows_api;
 use crossbeam_utils::atomic::AtomicConsume;
-use std::os::windows::ffi::OsStrExt;
-use std::sync::atomic::Ordering;
 use std::sync::mpsc;
 use std::time::Duration;
 use windows::Win32::Foundation::COLORREF;
@@ -32,32 +24,24 @@ use windows::Win32::Foundation::HWND;
 use windows::Win32::Foundation::LPARAM;
 use windows::Win32::Foundation::LRESULT;
 use windows::Win32::Foundation::WPARAM;
-use windows::Win32::Graphics::Gdi::CreateFontIndirectW;
 use windows::Win32::Graphics::Gdi::CreatePen;
 use windows::Win32::Graphics::Gdi::CreateSolidBrush;
-use windows::Win32::Graphics::Gdi::DT_CENTER;
-use windows::Win32::Graphics::Gdi::DT_END_ELLIPSIS;
-use windows::Win32::Graphics::Gdi::DT_SINGLELINE;
-use windows::Win32::Graphics::Gdi::DT_VCENTER;
 use windows::Win32::Graphics::Gdi::DeleteObject;
-use windows::Win32::Graphics::Gdi::DrawTextW;
-use windows::Win32::Graphics::Gdi::FONT_QUALITY;
-use windows::Win32::Graphics::Gdi::FW_BOLD;
-use windows::Win32::Graphics::Gdi::GetDC;
-use windows::Win32::Graphics::Gdi::GetDeviceCaps;
-use windows::Win32::Graphics::Gdi::LOGFONTW;
-use windows::Win32::Graphics::Gdi::LOGPIXELSY;
-use windows::Win32::Graphics::Gdi::PROOF_QUALITY;
 use windows::Win32::Graphics::Gdi::PS_SOLID;
-use windows::Win32::Graphics::Gdi::Rectangle;
-use windows::Win32::Graphics::Gdi::ReleaseDC;
-use windows::Win32::Graphics::Gdi::RoundRect;
 use windows::Win32::Graphics::Gdi::SelectObject;
 use windows::Win32::Graphics::Gdi::SetBkColor;
-use windows::Win32::Graphics::Gdi::SetTextColor;
-use windows::Win32::Graphics::Gdi::CreateCompatibleBitmap;
 use windows::Win32::Graphics::Gdi::CreateCompatibleDC;
-use windows::Win32::System::WindowsProgramming::MulDiv;
+use windows::Win32::Graphics::Gdi::BITMAPINFO;
+use windows::Win32::Graphics::Gdi::BITMAPINFOHEADER;
+use windows::Win32::Graphics::Gdi::BI_RGB;
+use windows::Win32::Graphics::Gdi::DIB_RGB_COLORS;
+use windows::Win32::Graphics::Gdi::CreateDIBSection;
+use windows::Win32::Graphics::Gdi::BLENDFUNCTION;
+use windows::Win32::UI::Controls::{
+    TTTOOLINFOW, TTF_SUBCLASS, TTF_TRANSPARENT, TTS_ALWAYSTIP, TTS_NOPREFIX,
+    TTM_ADDTOOLW, TTM_DELTOOLW, TTM_SETMAXTIPWIDTH,
+};
+use windows::Win32::UI::WindowsAndMessaging::SendMessageW;
 use windows::Win32::UI::WindowsAndMessaging::CS_HREDRAW;
 use windows::Win32::UI::WindowsAndMessaging::CS_VREDRAW;
 use windows::Win32::UI::WindowsAndMessaging::CreateWindowExW;
@@ -65,13 +49,14 @@ use windows::Win32::UI::WindowsAndMessaging::DefWindowProcW;
 use windows::Win32::UI::WindowsAndMessaging::DispatchMessageW;
 use windows::Win32::UI::WindowsAndMessaging::GetMessageW;
 use windows::Win32::UI::WindowsAndMessaging::IDC_ARROW;
-use windows::Win32::UI::WindowsAndMessaging::LWA_COLORKEY;
 use windows::Win32::UI::WindowsAndMessaging::LoadCursorW;
 use windows::Win32::UI::WindowsAndMessaging::MSG;
 use windows::Win32::UI::WindowsAndMessaging::PostQuitMessage;
 use windows::Win32::UI::WindowsAndMessaging::SetCursor;
-use windows::Win32::UI::WindowsAndMessaging::SetLayeredWindowAttributes;
 use windows::Win32::UI::WindowsAndMessaging::TranslateMessage;
+use windows::Win32::UI::WindowsAndMessaging::UpdateLayeredWindow;
+use windows::Win32::UI::WindowsAndMessaging::ULW_ALPHA;
+use windows::Win32::Foundation::SIZE as WinSize;
 use windows::Win32::UI::WindowsAndMessaging::WM_DESTROY;
 use windows::Win32::UI::WindowsAndMessaging::WM_ERASEBKGND;
 use windows::Win32::UI::WindowsAndMessaging::WM_LBUTTONDOWN;
@@ -81,8 +66,16 @@ use windows::Win32::UI::WindowsAndMessaging::WS_EX_LAYERED;
 use windows::Win32::UI::WindowsAndMessaging::WS_EX_TOOLWINDOW;
 use windows::Win32::UI::WindowsAndMessaging::WS_POPUP;
 use windows::Win32::UI::WindowsAndMessaging::WS_VISIBLE;
+use windows::Win32::UI::WindowsAndMessaging::WS_EX_TOPMOST;
+use windows::Win32::UI::WindowsAndMessaging::WINDOW_STYLE;
 use windows::Win32::UI::WindowsAndMessaging::DrawIconEx;
 use windows::Win32::UI::WindowsAndMessaging::DI_NORMAL;
+use windows::Win32::UI::WindowsAndMessaging::CW_USEDEFAULT;
+use windows::Win32::UI::WindowsAndMessaging::SetWindowPos;
+use windows::Win32::UI::WindowsAndMessaging::HWND_TOPMOST;
+use windows::Win32::UI::WindowsAndMessaging::SWP_NOMOVE;
+use windows::Win32::UI::WindowsAndMessaging::SWP_NOSIZE;
+use windows::Win32::UI::WindowsAndMessaging::SWP_NOACTIVATE;
 use windows::Win32::Graphics::GdiPlus::{
     FillModeAlternate, GdipAddPathArcI, GdipClosePathFigure, GdipCreateFromHDC,
     GdipCreatePath, GdipCreateSolidFill, GdipDeleteBrush, GdipDeleteGraphics,
@@ -96,11 +89,12 @@ use windows::core::PCWSTR;
 #[derive(Debug)]
 pub struct Stackbar {
     pub hwnd: isize,
+    pub tooltip_hwnd: isize,
 }
 
 impl From<isize> for Stackbar {
     fn from(value: isize) -> Self {
-        Self { hwnd: value }
+        Self { hwnd: value, tooltip_hwnd: 0 }
     }
 }
 
@@ -147,9 +141,31 @@ impl Stackbar {
                     None,
                 )?;
 
-                SetLayeredWindowAttributes(hwnd, COLORREF(0), 0, LWA_COLORKEY)?;
                 let _ = SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE);
-                hwnd_sender.send(hwnd.0 as isize)?;
+
+                // Create an always-on-top tooltip window owned by the stackbar.
+                let tooltip_class: Vec<u16> = "tooltips_class32\0".encode_utf16().collect();
+                let tooltip = CreateWindowExW(
+                    WS_EX_TOPMOST,
+                    PCWSTR(tooltip_class.as_ptr()),
+                    PCWSTR::null(),
+                    WINDOW_STYLE(WS_POPUP.0 | TTS_ALWAYSTIP | TTS_NOPREFIX),
+                    CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+                    Some(hwnd),
+                    None,
+                    None,
+                    None,
+                ).unwrap_or_default();
+                let _ = SetWindowPos(
+                    tooltip,
+                    Some(HWND_TOPMOST),
+                    0, 0, 0, 0,
+                    SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE,
+                );
+                // Allow multi-line tooltips up to 300px wide
+                SendMessageW(tooltip, TTM_SETMAXTIPWIDTH, Some(WPARAM(0)), Some(LPARAM(300)));
+
+                hwnd_sender.send((hwnd.0 as isize, tooltip.0 as isize))?;
 
                 let mut msg: MSG = MSG::default();
 
@@ -169,9 +185,8 @@ impl Stackbar {
             Ok(())
         });
 
-        Ok(Self {
-            hwnd: hwnd_receiver.recv()?,
-        })
+        let (hwnd, tooltip_hwnd) = hwnd_receiver.recv()?;
+        Ok(Self { hwnd, tooltip_hwnd })
     }
 
     pub fn destroy(&self) -> color_eyre::Result<()> {
@@ -187,9 +202,6 @@ impl Stackbar {
         let width = STACKBAR_TAB_WIDTH.load_consume();
         let height = STACKBAR_TAB_HEIGHT.load_consume();
         let gap = DEFAULT_CONTAINER_PADDING.load_consume();
-        let background = STACKBAR_TAB_BACKGROUND_COLOUR.load_consume();
-        let focused_text_colour = STACKBAR_FOCUSED_TEXT_COLOUR.load_consume();
-        let unfocused_text_colour = STACKBAR_UNFOCUSED_TEXT_COLOUR.load_consume();
 
         let mut stackbars_containers = STACKBARS_CONTAINERS.lock();
         stackbars_containers.insert(self.hwnd, container.clone());
@@ -211,12 +223,10 @@ impl Stackbar {
         // so we have to do a synchronous call.
         // To avoid unneeded repaints and DWM flickering, only position if changed.
         let current_rect = WindowsApi::window_rect(self.hwnd).unwrap_or_default();
-        let p_width = layout.right - layout.left;
-        let p_height = layout.bottom - layout.top;
         if current_rect.left != layout.left
             || current_rect.top != layout.top
-            || (current_rect.right - current_rect.left) != p_width
-            || (current_rect.bottom - current_rect.top) != p_height
+            || current_rect.right != layout.right
+            || current_rect.bottom != layout.bottom
         {
             WindowsApi::position_window(self.hwnd, &layout, false, false)?;
         }
@@ -234,73 +244,61 @@ impl Stackbar {
                 let _ = GdiplusStartup(&mut token, &input, std::ptr::null_mut());
             });
 
-            let hdc = GetDC(Option::from(self.hwnd()));
-            let hdc_screen = GetDC(None);
-
-            // Double Buffering: Create an offscreen device context and a bitmap to match the window size.
             let window_rect = WindowsApi::window_rect(self.hwnd).unwrap_or_default();
-            let win_width = window_rect.right - window_rect.left;
-            let win_height = window_rect.bottom - window_rect.top;
-            
-            let hdc_mem = CreateCompatibleDC(Option::from(hdc));
-            let hbm_mem = CreateCompatibleBitmap(hdc, win_width, win_height);
-            let hbm_old = SelectObject(hdc_mem, hbm_mem.into());
+            let win_width = window_rect.right;
+            let win_height = window_rect.bottom;
 
-            // By default, make the entire memory bitmap transparent (COLORKEY)
-            let hbrush_clear = CreateSolidBrush(COLORREF(0));
-            let mut mem_rect = windows::Win32::Foundation::RECT {
-                left: 0,
-                top: 0,
-                right: win_width,
-                bottom: win_height,
-            };
-            windows::Win32::Graphics::Gdi::FillRect(hdc_mem, &mut mem_rect, hbrush_clear.into());
-            let _ = DeleteObject(hbrush_clear.into());
-
-            let hpen = CreatePen(PS_SOLID, 0, COLORREF(background));
-            let hbrush = CreateSolidBrush(COLORREF(background));
-
-            SelectObject(hdc_mem, hpen.into());
-            SelectObject(hdc_mem, hbrush.into());
-            SetBkColor(hdc_mem, COLORREF(background));
-
-            let mut logfont = LOGFONTW {
-                lfWeight: FW_BOLD.0 as i32,
-                lfQuality: FONT_QUALITY(PROOF_QUALITY.0),
-                lfFaceName: [0; 32],
-                ..Default::default()
-            };
-
-            if let Some(font_name) = &*STACKBAR_FONT_FAMILY.lock() {
-                let font = wide_string(font_name);
-                for (i, &c) in font.iter().enumerate() {
-                    logfont.lfFaceName[i] = c;
-                }
+            if win_width <= 0 || win_height <= 0 {
+                return Ok(());
             }
 
-            let logical_height = -MulDiv(
-                STACKBAR_FONT_SIZE.load(Ordering::SeqCst),
-                72,
-                GetDeviceCaps(Option::from(hdc), LOGPIXELSY),
-            );
+            // Create a 32-bit top-down DIB so GDI+ writes proper per-pixel alpha.
+            // Anti-aliased edge pixels blend against alpha=0 (fully transparent),
+            // not against the colorkey black — this gives correct smooth corners.
+            let bmi = BITMAPINFO {
+                bmiHeader: BITMAPINFOHEADER {
+                    biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32,
+                    biWidth: win_width,
+                    biHeight: -win_height, // top-down
+                    biPlanes: 1,
+                    biBitCount: 32,
+                    biCompression: BI_RGB.0,
+                    ..Default::default()
+                },
+                ..Default::default()
+            };
+            let mut pvbits: *mut std::ffi::c_void = std::ptr::null_mut();
+            let hbm_dib = CreateDIBSection(None, &bmi, DIB_RGB_COLORS, &mut pvbits, None, 0)
+                .unwrap_or_default();
+            // Zero-init: all pixels start as alpha=0 (fully transparent).
+            if !pvbits.is_null() {
+                std::ptr::write_bytes(pvbits as *mut u8, 0u8, (win_width * win_height * 4) as usize);
+            }
 
-            logfont.lfHeight = logical_height;
+            let hdc_mem = CreateCompatibleDC(None);
+            let hbm_old = SelectObject(hdc_mem, hbm_dib.into());
 
-            let hfont = CreateFontIndirectW(&logfont);
+            // We cannot select a global background brush here because we need it per tab.
+            // But we can clear the background to transparent or to a default color if needed.
 
-            SelectObject(hdc_mem, hfont.into());
+            // Clear all existing tooltip tools so stale rects don't linger.
+            // We delete a generous upper bound of tool IDs — deleteing a non-existent ID is harmless.
+            let tooltip_hwnd = HWND(windows_api::as_ptr!(self.tooltip_hwnd));
+            for j in 0usize..64 {
+                let mut ti = TTTOOLINFOW {
+                    cbSize: std::mem::size_of::<TTTOOLINFOW>() as u32,
+                    hwnd: self.hwnd(),
+                    uId: j,
+                    ..Default::default()
+                };
+                SendMessageW(tooltip_hwnd, TTM_DELTOOLW, Some(WPARAM(0)), Some(LPARAM(&mut ti as *mut _ as isize)));
+            }
 
             for (i, window) in container.windows().iter().enumerate() {
-                if window.hwnd == container.focused_window().copied().unwrap_or_default().hwnd {
-                    SetTextColor(hdc_mem, COLORREF(focused_text_colour));
-                } else {
-                    SetTextColor(hdc_mem, COLORREF(unfocused_text_colour));
-                }
-
                 let is_top = matches!(STACKBAR_POSITION.load(), StackbarPosition::Top);
                 let tab_width = if is_top { width } else { STACKBAR_VERTICAL_WIDTH.load_consume() };
 
-                let mut rect = if is_top {
+                let rect = if is_top {
                     let left = gap + (i as i32 * (tab_width + gap));
                     Rect {
                         top: 0,
@@ -318,16 +316,17 @@ impl Stackbar {
                     }
                 };
 
-                // For double buffering, we capture the screen underneath the window into our
-                // memory DC so the GDI+ anti-aliasing can blend against it smoothly.
-                let _ = windows::Win32::Graphics::Gdi::BitBlt(
-                    hdc_mem,
-                    rect.left, rect.top,
-                    rect.right - rect.left, rect.bottom - rect.top,
-                    Option::from(hdc_screen),
-                    window_rect.left + rect.left, window_rect.top + rect.top,
-                    windows::Win32::Graphics::Gdi::SRCCOPY,
-                );
+                let background = if i == container.focused_window_idx() {
+                    STACKBAR_TAB_FOCUSED_BACKGROUND_COLOUR.load_consume()
+                } else {
+                    STACKBAR_TAB_UNFOCUSED_BACKGROUND_COLOUR.load_consume()
+                };
+
+                let hpen = CreatePen(PS_SOLID, 0, COLORREF(background));
+                let hbrush = CreateSolidBrush(COLORREF(background));
+                SelectObject(hdc_mem, hpen.into());
+                SelectObject(hdc_mem, hbrush.into());
+                SetBkColor(hdc_mem, COLORREF(background));
 
                 let mut graphics = std::ptr::null_mut();
                 GdipCreateFromHDC(hdc_mem, &mut graphics);
@@ -347,7 +346,7 @@ impl Stackbar {
                 let g = ((background >> 8) & 0xFF) as u8;
                 let b = ((background >> 16) & 0xFF) as u8;
                 let argb = 0xFF_00_00_00 | ((r as u32) << 16) | ((g as u32) << 8) | (b as u32);
-                
+
                 let mut solid_brush = std::ptr::null_mut();
                 GdipCreateSolidFill(argb, &mut solid_brush);
                 let brush = solid_brush as *mut GpBrush;
@@ -355,9 +354,21 @@ impl Stackbar {
                 GdipFillPath(graphics, brush, path);
 
                 GdipDeleteBrush(brush);
-                GdipDeletePath(path);
                 GdipDeleteGraphics(graphics);
+                GdipDeletePath(path);
 
+                let _ = DeleteObject(hpen.into());
+                let _ = DeleteObject(hbrush.into());
+
+                // Draw icon centered in the tab (no text).
+                if let Ok(icon) = window.icon() {
+                    let icon_size = 16;
+                    let icon_x = rect.left + (tab_width - icon_size) / 2;
+                    let icon_y = rect.top + (height - icon_size) / 2;
+                    let _ = DrawIconEx(hdc_mem, icon_x, icon_y, icon, icon_size, icon_size, 0, None, DI_NORMAL);
+                }
+
+                // Register this tab rect as a tooltip tool with the window label.
                 let label = match STACKBAR_LABEL.load() {
                     StackbarLabel::Process => {
                         let exe = window.exe()?;
@@ -365,54 +376,52 @@ impl Stackbar {
                     }
                     StackbarLabel::Title => window.title()?,
                 };
-
-                let mut tab_title: Vec<u16> = label.encode_utf16().collect();
-
-                if let Ok(icon) = window.icon() {
-                    // Draw the 16x16 icon on the left side, centered vertically
-                    let icon_size = 16;
-                    let icon_x = rect.left + 10;
-                    let icon_y = rect.top + (height - icon_size) / 2;
-                    
-                    let _ = DrawIconEx(hdc_mem, icon_x, icon_y, icon, icon_size, icon_size, 0, None, DI_NORMAL);
-                    
-                    rect.left_padding(icon_size + 15);
-                } else {
-                    rect.left_padding(10);
-                }
-                
-                rect.right_padding(10);
-
-                DrawTextW(
-                    hdc_mem,
-                    &mut tab_title,
-                    &mut rect.into(),
-                    DT_SINGLELINE | DT_CENTER | DT_VCENTER | DT_END_ELLIPSIS,
-                );
+                let mut tip_text: Vec<u16> = label.encode_utf16().chain(std::iter::once(0)).collect();
+                let mut ti = TTTOOLINFOW {
+                    cbSize: std::mem::size_of::<TTTOOLINFOW>() as u32,
+                    uFlags: TTF_SUBCLASS | TTF_TRANSPARENT,
+                    hwnd: self.hwnd(),
+                    uId: i as usize,
+                    rect: windows::Win32::Foundation::RECT {
+                        left: rect.left,
+                        top: rect.top,
+                        right: rect.right,
+                        bottom: rect.bottom,
+                    },
+                    lpszText: windows::core::PWSTR(tip_text.as_mut_ptr()),
+                    ..Default::default()
+                };
+                SendMessageW(tooltip_hwnd, TTM_ADDTOOLW, Some(WPARAM(0)), Some(LPARAM(&mut ti as *mut _ as isize)));
             }
 
-            // Copy the fully constructed offscreen bitmap to the physical screen DC
-            let _ = windows::Win32::Graphics::Gdi::BitBlt(
-                hdc,
-                0, 0,
-                win_width, win_height,
-                Option::from(hdc_mem),
-                0, 0,
-                windows::Win32::Graphics::Gdi::SRCCOPY,
+            // Push the DIB to the layered window using per-pixel alpha blending.
+            // Must supply explicit pptDst + psize on every call (required on first call
+            // and harmless on subsequent calls).
+            let blend = BLENDFUNCTION {
+                BlendOp: 0,   // AC_SRC_OVER
+                BlendFlags: 0,
+                SourceConstantAlpha: 255,
+                AlphaFormat: 1, // AC_SRC_ALPHA
+            };
+            let src_pt = windows::Win32::Foundation::POINT { x: 0, y: 0 };
+            let dst_pt = windows::Win32::Foundation::POINT { x: window_rect.left, y: window_rect.top };
+            let size = windows::Win32::Foundation::SIZE { cx: win_width, cy: win_height };
+            let _ = UpdateLayeredWindow(
+                self.hwnd(),
+                None,
+                Some(&dst_pt),
+                Some(&size),
+                Some(hdc_mem),
+                Some(&src_pt),
+                COLORREF(0),
+                Some(&blend),
+                ULW_ALPHA,
             );
 
-            // Cleanup Double Buffering resources
+            // Cleanup
             SelectObject(hdc_mem, hbm_old);
-            let _ = DeleteObject(hbm_mem.into());
+            let _ = DeleteObject(hbm_dib.into());
             let _ = windows::Win32::Graphics::Gdi::DeleteDC(hdc_mem);
-
-            ReleaseDC(None, hdc_screen);
-            ReleaseDC(Option::from(self.hwnd()), hdc);
-            let _ = DeleteObject(hpen.into());
-            // TODO: error handling
-            let _ = DeleteObject(hbrush.into());
-            // TODO: error handling
-            let _ = DeleteObject(hfont.into());
         }
 
         Ok(())
@@ -518,11 +527,4 @@ impl Stackbar {
             }
         }
     }
-}
-
-fn wide_string(s: &str) -> Vec<u16> {
-    std::ffi::OsStr::new(s)
-        .encode_wide()
-        .chain(std::iter::once(0))
-        .collect()
 }
