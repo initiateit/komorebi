@@ -353,8 +353,51 @@ impl Stackbar {
                 GdipFillPath(graphics, brush, path);
 
                 GdipDeleteBrush(brush);
-                GdipDeleteGraphics(graphics);
                 GdipDeletePath(path);
+
+                // Draw horizontal indicator line at the bottom of the active tab
+                if i == container.focused_window_idx() {
+                    let indicator_height = 2; // 2px high line
+                    let indicator_width = 16;
+                    let indicator_color = crate::border_manager::FOCUSED.load(std::sync::atomic::Ordering::SeqCst);
+                    
+                    let ir = (indicator_color & 0xFF) as u8;
+                    let ig = ((indicator_color >> 8) & 0xFF) as u8;
+                    let ib = ((indicator_color >> 16) & 0xFF) as u8;
+                    let iargb = 0xFF_00_00_00 | ((ir as u32) << 16) | ((ig as u32) << 8) | (ib as u32);
+                    
+                    let mut i_brush = std::ptr::null_mut();
+                    GdipCreateSolidFill(iargb, &mut i_brush);
+                    let brush = i_brush as *mut GpBrush;
+
+                    let mut i_path = std::ptr::null_mut();
+                    GdipCreatePath(FillModeAlternate, &mut i_path);
+
+                    let icon_x = rect.left + (tab_width - indicator_width) / 2;
+                    let icon_y = rect.top + (height - 16) / 2;
+                    let i_top = icon_y + 16 + 4; // Exactly 4 pixels below the icon
+
+                    let i_rect = Rect {
+                        top: i_top,
+                        left: icon_x,
+                        right: icon_x + indicator_width,
+                        bottom: i_top + indicator_height,
+                    };
+                    
+                    // Since we're in GDI+, let's just add a rectangle to the path and fill it
+                    GdipAddPathArcI(i_path, i_rect.left, i_rect.top, 1, 1, 180.0, 90.0);
+                    GdipAddPathArcI(i_path, i_rect.right - 1, i_rect.top, 1, 1, 270.0, 90.0);
+                    GdipAddPathArcI(i_path, i_rect.right - 1, i_rect.bottom - 1, 1, 1, 0.0, 90.0);
+                    GdipAddPathArcI(i_path, i_rect.left, i_rect.bottom - 1, 1, 1, 90.0, 90.0);
+                    GdipClosePathFigure(i_path);
+                    
+                    GdipFillPath(graphics, brush, i_path);
+                    
+                    GdipDeletePath(i_path);
+                    GdipDeleteBrush(brush);
+                }
+
+                GdipDeleteGraphics(graphics);
 
                 let _ = DeleteObject(hpen.into());
                 let _ = DeleteObject(hbrush.into());
