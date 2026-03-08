@@ -94,8 +94,9 @@ use crate::workspace::WorkspaceLayer;
 use crate::workspace::WorkspaceWindowLocation;
 use stackbar_manager::STACKBAR_FOCUSED_TEXT_COLOUR;
 use stackbar_manager::STACKBAR_LABEL;
-use stackbar_manager::STACKBAR_MODE;
-use stackbar_manager::STACKBAR_TAB_BACKGROUND_COLOUR;
+use crate::stackbar_manager::STACKBAR_MODE;
+use crate::stackbar_manager::STACKBAR_TAB_FOCUSED_BACKGROUND_COLOUR;
+use crate::stackbar_manager::STACKBAR_TAB_UNFOCUSED_BACKGROUND_COLOUR;
 use stackbar_manager::STACKBAR_TAB_HEIGHT;
 use stackbar_manager::STACKBAR_TAB_WIDTH;
 use stackbar_manager::STACKBAR_UNFOCUSED_TEXT_COLOUR;
@@ -2200,9 +2201,13 @@ if (!(Get-Process komorebi-bar -ErrorAction SilentlyContinue))
                 let rgb = Rgb::new(r, g, b);
                 STACKBAR_UNFOCUSED_TEXT_COLOUR.store(rgb.into(), Ordering::SeqCst);
             }
-            SocketMessage::StackbarBackgroundColour(r, g, b) => {
+            SocketMessage::StackbarFocusedBackgroundColour(r, g, b) => {
                 let rgb = Rgb::new(r, g, b);
-                STACKBAR_TAB_BACKGROUND_COLOUR.store(rgb.into(), Ordering::SeqCst);
+                STACKBAR_TAB_FOCUSED_BACKGROUND_COLOUR.store(rgb.into(), Ordering::SeqCst);
+            }
+            SocketMessage::StackbarUnfocusedBackgroundColour(r, g, b) => {
+                let rgb = Rgb::new(r, g, b);
+                STACKBAR_TAB_UNFOCUSED_BACKGROUND_COLOUR.store(rgb.into(), Ordering::SeqCst);
             }
             SocketMessage::StackbarHeight(height) => {
                 STACKBAR_TAB_HEIGHT.store(height, Ordering::SeqCst);

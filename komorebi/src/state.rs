@@ -34,7 +34,8 @@ use crate::ring::Ring;
 use crate::stackbar_manager::STACKBAR_FOCUSED_TEXT_COLOUR;
 use crate::stackbar_manager::STACKBAR_LABEL;
 use crate::stackbar_manager::STACKBAR_MODE;
-use crate::stackbar_manager::STACKBAR_TAB_BACKGROUND_COLOUR;
+use crate::stackbar_manager::STACKBAR_TAB_FOCUSED_BACKGROUND_COLOUR;
+use crate::stackbar_manager::STACKBAR_TAB_UNFOCUSED_BACKGROUND_COLOUR;
 use crate::stackbar_manager::STACKBAR_TAB_HEIGHT;
 use crate::stackbar_manager::STACKBAR_TAB_WIDTH;
 use crate::stackbar_manager::STACKBAR_UNFOCUSED_TEXT_COLOUR;
@@ -130,7 +131,8 @@ pub struct GlobalState {
     pub stackbar_label: StackbarLabel,
     pub stackbar_focused_text_colour: Colour,
     pub stackbar_unfocused_text_colour: Colour,
-    pub stackbar_tab_background_colour: Colour,
+    pub stackbar_tab_focused_background_colour: Colour,
+    pub stackbar_tab_unfocused_background_colour: Colour,
     pub stackbar_tab_width: i32,
     pub stackbar_height: i32,
     pub transparency_enabled: bool,
@@ -189,8 +191,11 @@ impl Default for GlobalState {
             stackbar_unfocused_text_colour: Colour::Rgb(Rgb::from(
                 STACKBAR_UNFOCUSED_TEXT_COLOUR.load(Ordering::SeqCst),
             )),
-            stackbar_tab_background_colour: Colour::Rgb(Rgb::from(
-                STACKBAR_TAB_BACKGROUND_COLOUR.load(Ordering::SeqCst),
+            stackbar_tab_focused_background_colour: Colour::Rgb(Rgb::from(
+                STACKBAR_TAB_FOCUSED_BACKGROUND_COLOUR.load(Ordering::SeqCst),
+            )),
+            stackbar_tab_unfocused_background_colour: Colour::Rgb(Rgb::from(
+                STACKBAR_TAB_UNFOCUSED_BACKGROUND_COLOUR.load(Ordering::SeqCst),
             )),
             stackbar_tab_width: STACKBAR_TAB_WIDTH.load(Ordering::SeqCst),
             stackbar_height: STACKBAR_TAB_HEIGHT.load(Ordering::SeqCst),

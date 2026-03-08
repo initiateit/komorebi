@@ -4,7 +4,8 @@ use crate::KomorebiTheme;
 use crate::border_manager;
 use crate::stackbar_manager;
 use crate::stackbar_manager::STACKBAR_FOCUSED_TEXT_COLOUR;
-use crate::stackbar_manager::STACKBAR_TAB_BACKGROUND_COLOUR;
+use crate::stackbar_manager::STACKBAR_TAB_FOCUSED_BACKGROUND_COLOUR;
+use crate::stackbar_manager::STACKBAR_TAB_UNFOCUSED_BACKGROUND_COLOUR;
 use crate::stackbar_manager::STACKBAR_UNFOCUSED_TEXT_COLOUR;
 use crossbeam_channel::Receiver;
 use crossbeam_channel::Sender;
@@ -283,7 +284,12 @@ pub fn handle_notifications() -> color_eyre::Result<()> {
             Ordering::SeqCst,
         );
 
-        STACKBAR_TAB_BACKGROUND_COLOUR.store(
+        STACKBAR_TAB_FOCUSED_BACKGROUND_COLOUR.store(
+            u32::from(Colour::from(stackbar_background)),
+            Ordering::SeqCst,
+        );
+
+        STACKBAR_TAB_UNFOCUSED_BACKGROUND_COLOUR.store(
             u32::from(Colour::from(stackbar_background)),
             Ordering::SeqCst,
         );

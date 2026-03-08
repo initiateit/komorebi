@@ -13,3 +13,11 @@ komorebic/applications.json
 result
 /.direnv
 procdump.exe
+errors.txt
+full_errors.txt
+komorebi_trace_err.log
+komorebi_trace.log
+new_state.txt
+new_state2.txt
+komorebi/errors.txt
+build_errors.txt

@@ -56,7 +56,6 @@ use windows::Win32::UI::WindowsAndMessaging::SetCursor;
 use windows::Win32::UI::WindowsAndMessaging::TranslateMessage;
 use windows::Win32::UI::WindowsAndMessaging::UpdateLayeredWindow;
 use windows::Win32::UI::WindowsAndMessaging::ULW_ALPHA;
-use windows::Win32::Foundation::SIZE as WinSize;
 use windows::Win32::UI::WindowsAndMessaging::WM_DESTROY;
 use windows::Win32::UI::WindowsAndMessaging::WM_ERASEBKGND;
 use windows::Win32::UI::WindowsAndMessaging::WM_LBUTTONDOWN;

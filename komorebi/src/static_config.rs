@@ -81,7 +81,8 @@ use crate::stackbar_manager::STACKBAR_LABEL;
 use crate::stackbar_manager::STACKBAR_MODE;
 use crate::stackbar_manager::STACKBAR_POSITION;
 use crate::stackbar_manager::STACKBAR_VERTICAL_WIDTH;
-use crate::stackbar_manager::STACKBAR_TAB_BACKGROUND_COLOUR;
+use crate::stackbar_manager::STACKBAR_TAB_FOCUSED_BACKGROUND_COLOUR;
+use crate::stackbar_manager::STACKBAR_TAB_UNFOCUSED_BACKGROUND_COLOUR;
 use crate::stackbar_manager::STACKBAR_TAB_HEIGHT;
 use crate::stackbar_manager::STACKBAR_TAB_WIDTH;
 use crate::stackbar_manager::STACKBAR_UNFOCUSED_TEXT_COLOUR;
@@ -782,9 +783,12 @@ pub struct TabsConfig {
     /// Unfocused tab text colour
     #[serde(skip_serializing_if = "Option::is_none")]
     pub unfocused_text: Option<Colour>,
-    /// Tab background colour
+    /// Tab background colour (unfocused)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub background: Option<Colour>,
+    /// Focused tab background colour
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub focused_background: Option<Colour>,
     /// Font family
     #[serde(skip_serializing_if = "Option::is_none")]
     pub font_family: Option<String>,
@@ -1185,7 +1189,11 @@ impl StaticConfig {
             #[allow(clippy::assigning_clones)]
             if let Some(tabs) = &stackbar.tabs {
                 if let Some(background) = &tabs.background {
-                    STACKBAR_TAB_BACKGROUND_COLOUR.store((*background).into(), Ordering::SeqCst);
+                    STACKBAR_TAB_UNFOCUSED_BACKGROUND_COLOUR.store((*background).into(), Ordering::SeqCst);
+                }
+
+                if let Some(focused_background) = &tabs.focused_background {
+                    STACKBAR_TAB_FOCUSED_BACKGROUND_COLOUR.store((*focused_background).into(), Ordering::SeqCst);
                 }
 
                 if let Some(colour) = &tabs.focused_text {

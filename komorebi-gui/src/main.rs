@@ -59,9 +59,10 @@ struct StackbarConfig {
     label: StackbarLabel,
     height: i32,
     width: i32,
-    focused_text_colour: Color32,
-    unfocused_text_colour: Color32,
-    background_colour: Color32,
+    pub focused_text_colour: Color32,
+    pub unfocused_text_colour: Color32,
+    pub focused_background_colour: Color32,
+    pub unfocused_background_colour: Color32,
 }
 
 struct MonitorConfig {
@@ -190,7 +191,8 @@ impl KomorebiGui {
             label: global_state.stackbar_label,
             focused_text_colour: colour32(Some(global_state.stackbar_focused_text_colour)),
             unfocused_text_colour: colour32(Some(global_state.stackbar_unfocused_text_colour)),
-            background_colour: colour32(Some(global_state.stackbar_tab_background_colour)),
+            focused_background_colour: colour32(Some(global_state.stackbar_tab_focused_background_colour)),
+            unfocused_background_colour: colour32(Some(global_state.stackbar_tab_unfocused_background_colour)),
         };
 
         let mut debug_windows = vec![];
@@ -563,17 +565,34 @@ impl eframe::App for KomorebiGui {
                             }
                         });
 
-                        ui.collapsing("Background", |ui| {
+                        ui.collapsing("Focused Background", |ui| {
                             if egui::color_picker::color_picker_color32(
                                 ui,
-                                &mut self.stackbar_config.background_colour,
+                                &mut self.stackbar_config.focused_background_colour,
                                 Alpha::Opaque,
                             ) {
                                 komorebi_client::send_message(
-                                    &SocketMessage::StackbarBackgroundColour(
-                                        self.stackbar_config.background_colour.r() as u32,
-                                        self.stackbar_config.background_colour.g() as u32,
-                                        self.stackbar_config.background_colour.b() as u32,
+                                    &SocketMessage::StackbarFocusedBackgroundColour(
+                                        self.stackbar_config.focused_background_colour.r() as u32,
+                                        self.stackbar_config.focused_background_colour.g() as u32,
+                                        self.stackbar_config.focused_background_colour.b() as u32,
+                                    ),
+                                )
+                                .unwrap();
+                            }
+                        });
+
+                        ui.collapsing("Unfocused Background", |ui| {
+                            if egui::color_picker::color_picker_color32(
+                                ui,
+                                &mut self.stackbar_config.unfocused_background_colour,
+                                Alpha::Opaque,
+                            ) {
+                                komorebi_client::send_message(
+                                    &SocketMessage::StackbarUnfocusedBackgroundColour(
+                                        self.stackbar_config.unfocused_background_colour.r() as u32,
+                                        self.stackbar_config.unfocused_background_colour.g() as u32,
+                                        self.stackbar_config.unfocused_background_colour.b() as u32,
                                     ),
                                 )
                                 .unwrap();
