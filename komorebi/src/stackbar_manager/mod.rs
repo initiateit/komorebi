@@ -35,14 +35,22 @@ pub static STACKBAR_LABEL: AtomicCell<StackbarLabel> = AtomicCell::new(StackbarL
 pub static STACKBAR_MODE: AtomicCell<StackbarMode> = AtomicCell::new(StackbarMode::Never);
 pub static STACKBAR_POSITION: AtomicCell<StackbarPosition> = AtomicCell::new(StackbarPosition::Top);
 pub static STACKBAR_VERTICAL_WIDTH: AtomicI32 = AtomicI32::new(40);
+pub static STACKBAR_TOOLTIP_BACKGROUND_COLOUR: AtomicU32 = AtomicU32::new(0x242020);
+pub static STACKBAR_TOOLTIP_TEXT_COLOUR: AtomicU32 = AtomicU32::new(0xFFFFFF);
+pub static STACKBAR_TOOLTIP_FONT_SIZE: AtomicI32 = AtomicI32::new(12);
+pub static STACKBAR_TOOLTIP_ALPHA: AtomicU32 = AtomicU32::new(200);
 
 pub static STACKBAR_TEMPORARILY_DISABLED: AtomicBool = AtomicBool::new(false);
 
 lazy_static! {
     pub static ref STACKBAR_STATE: Mutex<HashMap<String, Stackbar>> = Mutex::new(HashMap::new());
     pub static ref STACKBAR_FONT_FAMILY: Mutex<Option<String>> = Mutex::new(None);
+    pub static ref STACKBAR_TOOLTIP_FONT_FAMILY: Mutex<Option<String>> = Mutex::new(None);
+    pub static ref STACKBAR_TOOLTIP_FONT_WEIGHT: Mutex<Option<String>> = Mutex::new(None);
     static ref STACKBARS_MONITORS: Mutex<HashMap<String, usize>> = Mutex::new(HashMap::new());
     static ref STACKBARS_CONTAINERS: Mutex<HashMap<isize, Container>> = Mutex::new(HashMap::new());
+    /// Maps stackbar hwnd -> vec of tooltip label strings (one per tab).
+    pub static ref STACKBAR_TOOLTIP_LABELS: Mutex<HashMap<isize, Vec<String>>> = Mutex::new(HashMap::new());
 }
 
 pub struct Notification;

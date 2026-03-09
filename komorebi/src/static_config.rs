@@ -86,6 +86,12 @@ use crate::stackbar_manager::STACKBAR_TAB_UNFOCUSED_BACKGROUND_COLOUR;
 use crate::stackbar_manager::STACKBAR_TAB_HEIGHT;
 use crate::stackbar_manager::STACKBAR_TAB_WIDTH;
 use crate::stackbar_manager::STACKBAR_UNFOCUSED_TEXT_COLOUR;
+use crate::stackbar_manager::STACKBAR_TOOLTIP_ALPHA;
+use crate::stackbar_manager::STACKBAR_TOOLTIP_BACKGROUND_COLOUR;
+use crate::stackbar_manager::STACKBAR_TOOLTIP_FONT_FAMILY;
+use crate::stackbar_manager::STACKBAR_TOOLTIP_FONT_WEIGHT;
+use crate::stackbar_manager::STACKBAR_TOOLTIP_FONT_SIZE;
+use crate::stackbar_manager::STACKBAR_TOOLTIP_TEXT_COLOUR;
 use crate::theme_manager;
 use crate::transparency_manager;
 use crate::window;
@@ -799,6 +805,30 @@ pub struct TabsConfig {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+/// Stackbar tooltips configuration
+pub struct TooltipConfig {
+    /// Tooltip background colour
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub background: Option<Colour>,
+    /// Tooltip text colour
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub text: Option<Colour>,
+    /// Tooltip font family
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub font_family: Option<String>,
+    /// Tooltip font weight
+    #[serde(skip_serializing_if = "Option::is_none", alias = "font-weight")]
+    pub font_weight: Option<String>,
+    /// Tooltip font size
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub font_size: Option<i32>,
+    /// Tooltip alpha transparency (0-255)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub alpha: Option<u32>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 /// Stackbar configuration
 pub struct StackbarConfig {
     /// Stackbar height
@@ -814,6 +844,9 @@ pub struct StackbarConfig {
     /// Stackbar tab configuration options
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tabs: Option<TabsConfig>,
+    /// Stackbar tooltip configuration options
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tooltip: Option<TooltipConfig>,
     /// Position of the stackbar relative to the container
     #[serde(skip_serializing_if = "Option::is_none")]
     #[cfg_attr(feature = "schemars", schemars(extend("default" = StackbarPosition::Top)))]
@@ -1210,6 +1243,27 @@ impl StaticConfig {
 
                 STACKBAR_FONT_SIZE.store(tabs.font_size.unwrap_or(0), Ordering::SeqCst);
                 *STACKBAR_FONT_FAMILY.lock() = tabs.font_family.clone();
+            }
+
+            if let Some(tooltip) = &stackbar.tooltip {
+                if let Some(background) = &tooltip.background {
+                    STACKBAR_TOOLTIP_BACKGROUND_COLOUR.store((*background).into(), Ordering::SeqCst);
+                }
+
+                if let Some(text) = &tooltip.text {
+                    STACKBAR_TOOLTIP_TEXT_COLOUR.store((*text).into(), Ordering::SeqCst);
+                }
+
+                if let Some(font_size) = &tooltip.font_size {
+                    STACKBAR_TOOLTIP_FONT_SIZE.store(*font_size, Ordering::SeqCst);
+                }
+
+                if let Some(alpha) = &tooltip.alpha {
+                    STACKBAR_TOOLTIP_ALPHA.store(*alpha, Ordering::SeqCst);
+                }
+
+                *STACKBAR_TOOLTIP_FONT_FAMILY.lock() = tooltip.font_family.clone();
+                *STACKBAR_TOOLTIP_FONT_WEIGHT.lock() = tooltip.font_weight.clone();
             }
         }
 
