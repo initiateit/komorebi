@@ -726,6 +726,18 @@ struct BorderWidth {
 }
 
 #[derive(Parser)]
+struct MonocleWidth {
+    /// Width ratio for monocle mode (0.1 to 1.0)
+    ratio: f32,
+}
+
+#[derive(Parser)]
+struct MonocleHeight {
+    /// Height ratio for monocle mode (0.1 to 1.0)
+    ratio: f32,
+}
+
+#[derive(Parser)]
 struct BorderOffset {
     /// Desired offset of the window border
     offset: i32,
@@ -1385,6 +1397,20 @@ enum SubCommand {
     ToggleFloat,
     /// Toggle monocle mode for the focused container
     ToggleMonocle,
+    /// Set the width ratio for monocle mode (0.1 to 1.0)
+    #[clap(arg_required_else_help = true)]
+    MonocleWidth(MonocleWidth),
+    /// Increase the monocle width by 5%
+    IncreaseMonocleWidth,
+    /// Decrease the monocle width by 5%
+    DecreaseMonocleWidth,
+    /// Set the height ratio for monocle mode (0.1 to 1.0)
+    #[clap(arg_required_else_help = true)]
+    MonocleHeight(MonocleHeight),
+    /// Increase the monocle height by 5%
+    IncreaseMonocleHeight,
+    /// Decrease the monocle height by 5%
+    DecreaseMonocleHeight,
     /// Toggle native maximization for the focused window
     ToggleMaximize,
     /// Toggle a lock for the focused container, ensuring it will not be displaced by any new windows
@@ -2258,6 +2284,24 @@ fn main() -> eyre::Result<()> {
         }
         SubCommand::ToggleMonocle => {
             send_message(&SocketMessage::ToggleMonocle)?;
+        }
+        SubCommand::MonocleWidth(args) => {
+            send_message(&SocketMessage::SetMonocleWidth(args.ratio))?;
+        }
+        SubCommand::IncreaseMonocleWidth => {
+            send_message(&SocketMessage::AdjustMonocleWidth(Sizing::Increase))?;
+        }
+        SubCommand::DecreaseMonocleWidth => {
+            send_message(&SocketMessage::AdjustMonocleWidth(Sizing::Decrease))?;
+        }
+        SubCommand::MonocleHeight(args) => {
+            send_message(&SocketMessage::SetMonocleHeight(args.ratio))?;
+        }
+        SubCommand::IncreaseMonocleHeight => {
+            send_message(&SocketMessage::AdjustMonocleHeight(Sizing::Increase))?;
+        }
+        SubCommand::DecreaseMonocleHeight => {
+            send_message(&SocketMessage::AdjustMonocleHeight(Sizing::Decrease))?;
         }
         SubCommand::ToggleMaximize => {
             send_message(&SocketMessage::ToggleMaximize)?;

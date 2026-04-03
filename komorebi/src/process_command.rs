@@ -424,6 +424,10 @@ impl WindowManager {
             SocketMessage::ToggleLock => self.toggle_lock()?,
             SocketMessage::ToggleFloat => self.toggle_float(false)?,
             SocketMessage::ToggleMonocle => self.toggle_monocle()?,
+            SocketMessage::SetMonocleWidth(ratio) => self.set_monocle_width(ratio)?,
+            SocketMessage::AdjustMonocleWidth(sizing) => self.adjust_monocle_width(sizing)?,
+            SocketMessage::SetMonocleHeight(ratio) => self.set_monocle_height(ratio)?,
+            SocketMessage::AdjustMonocleHeight(sizing) => self.adjust_monocle_height(sizing)?,
             SocketMessage::ToggleMaximize => self.toggle_maximize()?,
             SocketMessage::ContainerPadding(monitor_idx, workspace_idx, size) => {
                 self.set_container_padding(monitor_idx, workspace_idx, size)?;
