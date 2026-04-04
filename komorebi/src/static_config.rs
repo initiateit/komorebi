@@ -84,6 +84,7 @@ use crate::stackbar_manager::STACKBAR_TAB_WIDTH;
 use crate::stackbar_manager::STACKBAR_UNFOCUSED_TEXT_COLOUR;
 use crate::theme_manager;
 use crate::transparency_manager;
+use crate::blur_overlay;
 use crate::window;
 use crate::window_manager::WindowManager;
 use crate::window_manager_event::WindowManagerEvent;
@@ -571,6 +572,15 @@ pub struct StaticConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[cfg_attr(feature = "schemars", schemars(extend("default" = transparency_manager::TRANSPARENCY_ALPHA)))]
     pub transparency_alpha: Option<u8>,
+    /// Add backdrop blur effect in monocle mode
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub monocle_backdrop_blur: Option<bool>,
+    /// Backdrop blur color in RGB format for monocle mode (e.g., {"r": 0, "g": 0, "b": 0})
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub monocle_backdrop_color: Option<Colour>,
+    /// Backdrop blur alpha/transparency for monocle mode [[0-255]]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub monocle_backdrop_alpha: Option<u8>,
     /// Individual window transparency ignore rules
     #[serde(skip_serializing_if = "Option::is_none")]
     pub transparency_ignore_rules: Option<Vec<MatchingRule>>,
@@ -880,6 +890,11 @@ impl From<&WindowManager> for StaticConfig {
             transparency_alpha: Option::from(
                 transparency_manager::TRANSPARENCY_ALPHA.load(Ordering::SeqCst),
             ),
+            monocle_backdrop_blur: Option::from(
+                blur_overlay::MONOCLE_BACKDROP_BLUR.load(Ordering::SeqCst),
+            ),
+            monocle_backdrop_color: Some(blur_overlay::MONOCLE_BACKDROP_COLOR.lock().clone()),
+            monocle_backdrop_alpha: Some(*blur_overlay::MONOCLE_BACKDROP_ALPHA.lock()),
             transparency_ignore_rules: None,
             border_style: Option::from(STYLE.load()),
             #[allow(deprecated)]
@@ -1077,6 +1092,18 @@ impl StaticConfig {
 
         if let Some(transparency_alpha) = self.transparency_alpha {
             transparency_manager::TRANSPARENCY_ALPHA.store(transparency_alpha, Ordering::SeqCst);
+        }
+
+        if let Some(monocle_backdrop_blur) = self.monocle_backdrop_blur {
+            blur_overlay::MONOCLE_BACKDROP_BLUR.store(monocle_backdrop_blur, Ordering::SeqCst);
+        }
+
+        if let Some(monocle_backdrop_color) = &self.monocle_backdrop_color {
+            *blur_overlay::MONOCLE_BACKDROP_COLOR.lock() = monocle_backdrop_color.clone();
+        }
+
+        if let Some(monocle_backdrop_alpha) = self.monocle_backdrop_alpha {
+            *blur_overlay::MONOCLE_BACKDROP_ALPHA.lock() = monocle_backdrop_alpha;
         }
 
         let mut ignore_identifiers = IGNORE_IDENTIFIERS.lock();

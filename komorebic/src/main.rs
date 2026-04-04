@@ -708,6 +708,12 @@ struct TransparencyAlpha {
 }
 
 #[derive(Parser)]
+struct MonocleBackdropBlur {
+    #[clap(value_enum)]
+    boolean_state: BooleanState,
+}
+
+#[derive(Parser)]
 struct BorderColour {
     #[clap(value_enum, short, long, default_value = "single")]
     window_kind: WindowKind,
@@ -1533,6 +1539,9 @@ enum SubCommand {
     TransparencyAlpha(TransparencyAlpha),
     /// Toggle transparency for unfocused windows
     ToggleTransparency,
+    /// Enable or disable backdrop blur for monocle mode
+    #[clap(arg_required_else_help = true)]
+    MonocleBackdropBlur(MonocleBackdropBlur),
     /// Enable or disable movement animations
     #[clap(arg_required_else_help = true)]
     Animation(Animation),
@@ -3245,6 +3254,9 @@ if (Get-Command Get-CimInstance -ErrorAction SilentlyContinue) {
         }
         SubCommand::ToggleTransparency => {
             send_message(&SocketMessage::ToggleTransparency)?;
+        }
+        SubCommand::MonocleBackdropBlur(args) => {
+            send_message(&SocketMessage::MonocleBackdropBlur(args.boolean_state.into()))?;
         }
         SubCommand::Animation(args) => {
             send_message(&SocketMessage::Animation(

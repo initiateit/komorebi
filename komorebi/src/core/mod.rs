@@ -206,6 +206,7 @@ pub enum SocketMessage {
     Transparency(bool),
     ToggleTransparency,
     TransparencyAlpha(u8),
+    MonocleBackdropBlur(bool),
     InvisibleBorders(Rect),
     StackbarMode(StackbarMode),
     StackbarLabel(StackbarLabel),

@@ -85,6 +85,7 @@ use crate::state::State;
 use crate::static_config::StaticConfig;
 use crate::theme_manager;
 use crate::transparency_manager;
+use crate::blur_overlay;
 use crate::window::RuleDebug;
 use crate::window::Window;
 use crate::window_manager::WindowManager;
@@ -2189,6 +2190,9 @@ if (!(Get-Process komorebi-bar -ErrorAction SilentlyContinue))
             SocketMessage::TransparencyAlpha(alpha) => {
                 transparency_manager::TRANSPARENCY_ALPHA.store(alpha, Ordering::SeqCst);
             }
+            SocketMessage::MonocleBackdropBlur(enable) => {
+                blur_overlay::MONOCLE_BACKDROP_BLUR.store(enable, Ordering::SeqCst);
+            }
             SocketMessage::StackbarMode(mode) => {
                 STACKBAR_MODE.store(mode);
                 self.retile_all(true)?;
@@ -2325,6 +2329,7 @@ if (!(Get-Process komorebi-bar -ErrorAction SilentlyContinue))
             border_manager::send_notification(None);
         }
         transparency_manager::send_notification();
+        blur_overlay::send_notification();
         stackbar_manager::send_notification();
 
         tracing::info!("processed");
