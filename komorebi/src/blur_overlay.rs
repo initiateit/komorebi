@@ -111,9 +111,9 @@ fn create_blur_window(x: i32, y: i32, width: i32, height: i32) -> Option<isize> 
         let alpha = *MONOCLE_BACKDROP_ALPHA.lock();
         let color = MONOCLE_BACKDROP_COLOR.lock().clone();
 
-        // Convert Colour to RGB value
+        // Convert Colour to RGB value (COLORREF format: 0x00bbggrr)
         let rgb = match &color {
-            Colour::Rgb(rgb) => ((rgb.r as u32) << 16) | ((rgb.g as u32) << 8) | (rgb.b as u32),
+            Colour::Rgb(rgb) => ((rgb.b as u32) << 16) | ((rgb.g as u32) << 8) | (rgb.r as u32),
             Colour::Hex(_) => 0,
         };
 
