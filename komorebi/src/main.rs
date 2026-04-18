@@ -54,6 +54,7 @@ use komorebi::state::State;
 use komorebi::static_config::StaticConfig;
 use komorebi::theme_manager;
 use komorebi::transparency_manager;
+use komorebi::blur_overlay;
 use komorebi::window_manager::WindowManager;
 use komorebi::windows_api::WindowsApi;
 use komorebi::winevent_listener;
@@ -329,6 +330,7 @@ fn main() -> eyre::Result<()> {
     border_manager::listen_for_notifications(wm.clone());
     stackbar_manager::listen_for_notifications(wm.clone());
     transparency_manager::listen_for_notifications(wm.clone());
+    blur_overlay::listen_for_notifications(wm.clone());
     monitor_reconciliator::listen_for_notifications(wm.clone())?;
     reaper::listen_for_notifications(wm.clone(), wm.lock().known_hwnds.clone());
     focus_manager::listen_for_notifications(wm.clone());

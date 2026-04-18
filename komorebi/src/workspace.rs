@@ -57,6 +57,10 @@ pub struct Workspace {
     pub monocle_container: Option<Container>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub monocle_container_restore_idx: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub monocle_width_ratio: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub monocle_height_ratio: Option<f32>,
     pub maximized_window: Option<Window>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub maximized_window_restore_idx: Option<usize>,
@@ -116,6 +120,8 @@ impl Default for Workspace {
             containers: Ring::default(),
             monocle_container: None,
             maximized_window: None,
+            monocle_width_ratio: Some(1.0),
+            monocle_height_ratio: Some(1.0),
             maximized_window_restore_idx: None,
             monocle_container_restore_idx: None,
             floating_windows: Ring::default(),
@@ -579,10 +585,48 @@ impl Workspace {
         if self.tile {
             if let Some(container) = &mut self.monocle_container {
                 if let Some(window) = container.focused_window_mut() {
-                    adjusted_work_area.add_padding(container_padding);
-                    adjusted_work_area.add_padding(border_offset);
-                    adjusted_work_area.add_padding(border_width);
-                    window.set_position(&adjusted_work_area, true)?;
+                    // Apply padding calculations
+                    let mut monocle_rect = adjusted_work_area;
+                    tracing::info!("Before padding: left={}, right={}", monocle_rect.left, monocle_rect.right);
+                    monocle_rect.add_padding(container_padding);
+                    tracing::info!("After container_padding: left={}, right={}", monocle_rect.left, monocle_rect.right);
+                    monocle_rect.add_padding(border_offset);
+                    tracing::info!("After border_offset: left={}, right={}", monocle_rect.left, monocle_rect.right);
+                    monocle_rect.add_padding(border_width);
+                    tracing::info!("After border_width: left={}, right={}", monocle_rect.left, monocle_rect.right);
+
+                    // Apply monocle width ratio (centered)
+                    tracing::info!("=== Before monocle width ratio: monocle_rect.left={}, monocle_rect.right={}, self.monocle_width_ratio={:?} ===",
+                        monocle_rect.left, monocle_rect.right, self.monocle_width_ratio);
+                    if let Some(ratio) = self.monocle_width_ratio {
+                        let current_width = monocle_rect.right;
+                        if ratio < 1.0 {
+                            let new_width = (current_width as f32 * ratio) as i32;
+                            let old_left = monocle_rect.left;
+                            monocle_rect.left += (current_width - new_width) / 2;
+                            monocle_rect.right = new_width;
+                            tracing::info!("Ratio {:.2}: width {}->{}, left {}->{}", ratio, current_width, new_width, old_left, monocle_rect.left);
+                        }
+                        tracing::info!("=== After monocle ratio: monocle_rect.left={}, monocle_rect.right={}, ratio={:.2} ===", monocle_rect.left, monocle_rect.right, ratio);
+                    }
+
+                    // Apply monocle height ratio (centered)
+                    tracing::info!("=== Before monocle height ratio: monocle_rect.top={}, monocle_rect.bottom={}, self.monocle_height_ratio={:?} ===",
+                        monocle_rect.top, monocle_rect.bottom, self.monocle_height_ratio);
+                    if let Some(ratio) = self.monocle_height_ratio {
+                        let current_height = monocle_rect.bottom;
+                        if ratio < 1.0 {
+                            let new_height = (current_height as f32 * ratio) as i32;
+                            let old_top = monocle_rect.top;
+                            monocle_rect.top += (current_height - new_height) / 2;
+                            monocle_rect.bottom = new_height;
+                            tracing::info!("Height Ratio {:.2}: height {}->{}, top {}->{}", ratio, current_height, new_height, old_top, monocle_rect.top);
+                        }
+                        tracing::info!("=== After monocle height ratio: monocle_rect.top={}, monocle_rect.bottom={}, ratio={:.2} ===", monocle_rect.top, monocle_rect.bottom, ratio);
+                    }
+
+                    // Use previous layout if available for smooth animation
+                    window.set_position_from(&monocle_rect, true, previous_layouts.first())?;
                 };
             } else if let Some(window) = &mut self.maximized_window {
                 window.maximize();

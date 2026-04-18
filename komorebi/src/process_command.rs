@@ -85,6 +85,7 @@ use crate::state::State;
 use crate::static_config::StaticConfig;
 use crate::theme_manager;
 use crate::transparency_manager;
+use crate::blur_overlay;
 use crate::window::RuleDebug;
 use crate::window::Window;
 use crate::window_manager::WindowManager;
@@ -425,6 +426,10 @@ impl WindowManager {
             SocketMessage::ToggleLock => self.toggle_lock()?,
             SocketMessage::ToggleFloat => self.toggle_float(false)?,
             SocketMessage::ToggleMonocle => self.toggle_monocle()?,
+            SocketMessage::SetMonocleWidth(ratio) => self.set_monocle_width(ratio)?,
+            SocketMessage::AdjustMonocleWidth(sizing) => self.adjust_monocle_width(sizing)?,
+            SocketMessage::SetMonocleHeight(ratio) => self.set_monocle_height(ratio)?,
+            SocketMessage::AdjustMonocleHeight(sizing) => self.adjust_monocle_height(sizing)?,
             SocketMessage::ToggleMaximize => self.toggle_maximize()?,
             SocketMessage::ContainerPadding(monitor_idx, workspace_idx, size) => {
                 self.set_container_padding(monitor_idx, workspace_idx, size)?;
@@ -2186,6 +2191,9 @@ if (!(Get-Process komorebi-bar -ErrorAction SilentlyContinue))
             SocketMessage::TransparencyAlpha(alpha) => {
                 transparency_manager::TRANSPARENCY_ALPHA.store(alpha, Ordering::SeqCst);
             }
+            SocketMessage::MonocleBackdropBlur(enable) => {
+                blur_overlay::MONOCLE_BACKDROP_BLUR.store(enable, Ordering::SeqCst);
+            }
             SocketMessage::StackbarMode(mode) => {
                 STACKBAR_MODE.store(mode);
                 self.retile_all(true)?;
@@ -2326,6 +2334,7 @@ if (!(Get-Process komorebi-bar -ErrorAction SilentlyContinue))
             border_manager::send_notification(None);
         }
         transparency_manager::send_notification();
+        blur_overlay::send_notification();
         stackbar_manager::send_notification();
 
         tracing::info!("processed");

@@ -254,6 +254,22 @@ impl<T> ProcessWindowsCrateResult<T> for WindowsCrateResult<T> {
     }
 }
 
+// AccentPolicy for SetWindowCompositionAttribute (used for backdrop blur)
+#[repr(C)]
+struct AccentPolicy {
+    accent_state: u32,
+    accent_flags: u32,
+    gradient_color: u32,
+    animation_id: u32,
+}
+
+#[repr(C)]
+struct WindowCompositionAttributeData {
+    attribute: u32,
+    data: usize,
+    size: usize,
+}
+
 pub struct WindowsApi;
 
 impl WindowsApi {
@@ -1349,6 +1365,85 @@ impl WindowsApi {
             )
         }
         .process()
+    }
+
+    /// Apply backdrop blur to a window using SetWindowCompositionAttribute
+    /// This works on Windows 10/11 and is more widely supported than DWMWA_SYSTEMBACKDROP_TYPE
+    pub fn set_window_backdrop_blur(hwnd: isize) -> eyre::Result<()> {
+        // ACCENT_ENABLE_BLURBEHIND = 3
+        const ACCENT_ENABLE_BLURBEHIND: u32 = 3;
+
+        let policy = AccentPolicy {
+            accent_state: ACCENT_ENABLE_BLURBEHIND,
+            accent_flags: 0x20 | 0x40 | 0x80, // Draw left/right/bottom borders
+            gradient_color: 0x00000000,
+            animation_id: 0,
+        };
+
+        let data = WindowCompositionAttributeData {
+            attribute: 19, // WCA_ACCENT_POLICY
+            data: &policy as *const _ as usize,
+            size: std::mem::size_of::<AccentPolicy>(),
+        };
+
+        unsafe {
+            let user32 = GetModuleHandleW(PCWSTR::null()).ok();
+            let user32 = user32.unwrap_or(HMODULE::default());
+
+            let func_ptr: Option<unsafe extern "system" fn(
+                HWND,
+                *const WindowCompositionAttributeData,
+            ) -> i32> = std::mem::transmute(windows::Win32::System::LibraryLoader::GetProcAddress(
+                user32,
+                windows::core::s!("SetWindowCompositionAttribute"),
+            ));
+
+            if let Some(set_window_composition_attribute) = func_ptr {
+                set_window_composition_attribute(HWND(as_ptr!(hwnd)), &data);
+                Ok(())
+            } else {
+                Err(Error::msg("SetWindowCompositionAttribute not found"))
+            }
+        }
+    }
+
+    /// Remove backdrop blur from a window
+    pub fn remove_window_backdrop_blur(hwnd: isize) -> eyre::Result<()> {
+        // ACCENT_DISABLED = 0
+        const ACCENT_DISABLED: u32 = 0;
+
+        let policy = AccentPolicy {
+            accent_state: ACCENT_DISABLED,
+            accent_flags: 0,
+            gradient_color: 0,
+            animation_id: 0,
+        };
+
+        let data = WindowCompositionAttributeData {
+            attribute: 19, // WCA_ACCENT_POLICY
+            data: &policy as *const _ as usize,
+            size: std::mem::size_of::<AccentPolicy>(),
+        };
+
+        unsafe {
+            let user32 = GetModuleHandleW(PCWSTR::null()).ok();
+            let user32 = user32.unwrap_or(HMODULE::default());
+
+            let func_ptr: Option<unsafe extern "system" fn(
+                HWND,
+                *const WindowCompositionAttributeData,
+            ) -> i32> = std::mem::transmute(windows::Win32::System::LibraryLoader::GetProcAddress(
+                user32,
+                windows::core::s!("SetWindowCompositionAttribute"),
+            ));
+
+            if let Some(set_window_composition_attribute) = func_ptr {
+                set_window_composition_attribute(HWND(as_ptr!(hwnd)), &data);
+                Ok(())
+            } else {
+                Err(Error::msg("SetWindowCompositionAttribute not found"))
+            }
+        }
     }
 
     pub fn create_border_window(

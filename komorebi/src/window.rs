@@ -682,6 +682,14 @@ impl Window {
         WindowsApi::set_window_accent(self.hwnd, None)
     }
 
+    pub fn backdrop_blur(self) -> eyre::Result<()> {
+        WindowsApi::set_window_backdrop_blur(self.hwnd)
+    }
+
+    pub fn remove_backdrop_blur(self) -> eyre::Result<()> {
+        WindowsApi::remove_window_backdrop_blur(self.hwnd)
+    }
+
     #[cfg(target_pointer_width = "64")]
     pub fn update_style(self, style: &WindowStyle) -> eyre::Result<()> {
         WindowsApi::update_style(self.hwnd, isize::try_from(style.bits())?)

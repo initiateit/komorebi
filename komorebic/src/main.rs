@@ -708,6 +708,12 @@ struct TransparencyAlpha {
 }
 
 #[derive(Parser)]
+struct MonocleBackdropBlur {
+    #[clap(value_enum)]
+    boolean_state: BooleanState,
+}
+
+#[derive(Parser)]
 struct BorderColour {
     #[clap(value_enum, short, long, default_value = "single")]
     window_kind: WindowKind,
@@ -723,6 +729,18 @@ struct BorderColour {
 struct BorderWidth {
     /// Desired width of the window border
     width: i32,
+}
+
+#[derive(Parser)]
+struct MonocleWidth {
+    /// Width ratio for monocle mode (0.1 to 1.0)
+    ratio: f32,
+}
+
+#[derive(Parser)]
+struct MonocleHeight {
+    /// Height ratio for monocle mode (0.1 to 1.0)
+    ratio: f32,
 }
 
 #[derive(Parser)]
@@ -1385,6 +1403,20 @@ enum SubCommand {
     ToggleFloat,
     /// Toggle monocle mode for the focused container
     ToggleMonocle,
+    /// Set the width ratio for monocle mode (0.1 to 1.0)
+    #[clap(arg_required_else_help = true)]
+    MonocleWidth(MonocleWidth),
+    /// Increase the monocle width by 5%
+    IncreaseMonocleWidth,
+    /// Decrease the monocle width by 5%
+    DecreaseMonocleWidth,
+    /// Set the height ratio for monocle mode (0.1 to 1.0)
+    #[clap(arg_required_else_help = true)]
+    MonocleHeight(MonocleHeight),
+    /// Increase the monocle height by 5%
+    IncreaseMonocleHeight,
+    /// Decrease the monocle height by 5%
+    DecreaseMonocleHeight,
     /// Toggle native maximization for the focused window
     ToggleMaximize,
     /// Toggle a lock for the focused container, ensuring it will not be displaced by any new windows
@@ -1507,6 +1539,9 @@ enum SubCommand {
     TransparencyAlpha(TransparencyAlpha),
     /// Toggle transparency for unfocused windows
     ToggleTransparency,
+    /// Enable or disable backdrop blur for monocle mode
+    #[clap(arg_required_else_help = true)]
+    MonocleBackdropBlur(MonocleBackdropBlur),
     /// Enable or disable movement animations
     #[clap(arg_required_else_help = true)]
     Animation(Animation),
@@ -2258,6 +2293,24 @@ fn main() -> eyre::Result<()> {
         }
         SubCommand::ToggleMonocle => {
             send_message(&SocketMessage::ToggleMonocle)?;
+        }
+        SubCommand::MonocleWidth(args) => {
+            send_message(&SocketMessage::SetMonocleWidth(args.ratio))?;
+        }
+        SubCommand::IncreaseMonocleWidth => {
+            send_message(&SocketMessage::AdjustMonocleWidth(Sizing::Increase))?;
+        }
+        SubCommand::DecreaseMonocleWidth => {
+            send_message(&SocketMessage::AdjustMonocleWidth(Sizing::Decrease))?;
+        }
+        SubCommand::MonocleHeight(args) => {
+            send_message(&SocketMessage::SetMonocleHeight(args.ratio))?;
+        }
+        SubCommand::IncreaseMonocleHeight => {
+            send_message(&SocketMessage::AdjustMonocleHeight(Sizing::Increase))?;
+        }
+        SubCommand::DecreaseMonocleHeight => {
+            send_message(&SocketMessage::AdjustMonocleHeight(Sizing::Decrease))?;
         }
         SubCommand::ToggleMaximize => {
             send_message(&SocketMessage::ToggleMaximize)?;
@@ -3201,6 +3254,9 @@ if (Get-Command Get-CimInstance -ErrorAction SilentlyContinue) {
         }
         SubCommand::ToggleTransparency => {
             send_message(&SocketMessage::ToggleTransparency)?;
+        }
+        SubCommand::MonocleBackdropBlur(args) => {
+            send_message(&SocketMessage::MonocleBackdropBlur(args.boolean_state.into()))?;
         }
         SubCommand::Animation(args) => {
             send_message(&SocketMessage::Animation(

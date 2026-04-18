@@ -3108,6 +3108,116 @@ impl WindowManager {
     }
 
     #[tracing::instrument(skip(self))]
+    pub fn set_monocle_width(&mut self, ratio: f32) -> eyre::Result<()> {
+        let workspace = self.focused_workspace_mut()?;
+        workspace.monocle_width_ratio = Some(ratio.clamp(0.1, 1.0));
+        self.update_focused_workspace(true, true)?;
+        Ok(())
+    }
+
+    #[tracing::instrument(skip(self))]
+    pub fn adjust_monocle_width(&mut self, sizing: Sizing) -> eyre::Result<()> {
+        const DELTA: f32 = 0.05; // 5% increment/decrement
+        tracing::info!("=== adjust_monocle_width called with sizing={:?} ===", sizing);
+
+        // Find the workspace with monocle active
+        let mut monocle_workspace_idx = None;
+        'monocle_search: for (monitor_idx, monitor) in self.monitors().iter().enumerate() {
+            for (workspace_idx, workspace) in monitor.workspaces().iter().enumerate() {
+                tracing::info!("Checking monitor {} workspace {}: monocle_container={}", monitor_idx, workspace_idx, workspace.monocle_container.is_some());
+                if workspace.monocle_container.is_some() {
+                    monocle_workspace_idx = Some((monitor_idx, workspace_idx));
+                    break 'monocle_search;
+                }
+            }
+        }
+        tracing::info!("Monocle workspace found: {:?}", monocle_workspace_idx);
+
+        if let Some((monitor_idx, workspace_idx)) = monocle_workspace_idx {
+            let ws = self.monitors_mut().get_mut(monitor_idx)
+                .ok_or_eyre("monitor not found")?
+                .workspaces_mut()
+                .get_mut(workspace_idx)
+                .ok_or_eyre("workspace not found")?;
+            let current = ws.monocle_width_ratio.unwrap_or(1.0);
+            let new_ratio = match sizing {
+                Sizing::Increase => (current + DELTA).min(1.0),
+                Sizing::Decrease => (current - DELTA).max(0.1),
+            };
+            ws.monocle_width_ratio = Some(new_ratio);
+            tracing::info!("adjust_monocle_width: {:?}, current={:.2}, new={:.2} (monocle workspace)", sizing, current, new_ratio);
+        } else {
+            // No monocle active, update focused workspace
+            let workspace = self.focused_workspace_mut()?;
+            let current = workspace.monocle_width_ratio.unwrap_or(1.0);
+            let new_ratio = match sizing {
+                Sizing::Increase => (current + DELTA).min(1.0),
+                Sizing::Decrease => (current - DELTA).max(0.1),
+            };
+            tracing::info!("adjust_monocle_width: {:?}, current={:.2}, new={:.2} (no monocle active)", sizing, current, new_ratio);
+            workspace.monocle_width_ratio = Some(new_ratio);
+        }
+
+        self.update_focused_workspace(true, true)?;
+        Ok(())
+    }
+
+    #[tracing::instrument(skip(self))]
+    pub fn set_monocle_height(&mut self, ratio: f32) -> eyre::Result<()> {
+        let workspace = self.focused_workspace_mut()?;
+        workspace.monocle_height_ratio = Some(ratio.clamp(0.1, 1.0));
+        self.update_focused_workspace(true, true)?;
+        Ok(())
+    }
+
+    #[tracing::instrument(skip(self))]
+    pub fn adjust_monocle_height(&mut self, sizing: Sizing) -> eyre::Result<()> {
+        const DELTA: f32 = 0.05; // 5% increment/decrement
+        tracing::info!("=== adjust_monocle_height called with sizing={:?} ===", sizing);
+
+        // Find the workspace with monocle active
+        let mut monocle_workspace_idx = None;
+        'monocle_search: for (monitor_idx, monitor) in self.monitors().iter().enumerate() {
+            for (workspace_idx, workspace) in monitor.workspaces().iter().enumerate() {
+                tracing::info!("Checking monitor {} workspace {}: monocle_container={}", monitor_idx, workspace_idx, workspace.monocle_container.is_some());
+                if workspace.monocle_container.is_some() {
+                    monocle_workspace_idx = Some((monitor_idx, workspace_idx));
+                    break 'monocle_search;
+                }
+            }
+        }
+        tracing::info!("Monocle workspace found: {:?}", monocle_workspace_idx);
+
+        if let Some((monitor_idx, workspace_idx)) = monocle_workspace_idx {
+            let ws = self.monitors_mut().get_mut(monitor_idx)
+                .ok_or_eyre("monitor not found")?
+                .workspaces_mut()
+                .get_mut(workspace_idx)
+                .ok_or_eyre("workspace not found")?;
+            let current = ws.monocle_height_ratio.unwrap_or(1.0);
+            let new_ratio = match sizing {
+                Sizing::Increase => (current + DELTA).min(1.0),
+                Sizing::Decrease => (current - DELTA).max(0.1),
+            };
+            ws.monocle_height_ratio = Some(new_ratio);
+            tracing::info!("adjust_monocle_height: {:?}, current={:.2}, new={:.2} (monocle workspace)", sizing, current, new_ratio);
+        } else {
+            // No monocle active, update focused workspace
+            let workspace = self.focused_workspace_mut()?;
+            let current = workspace.monocle_height_ratio.unwrap_or(1.0);
+            let new_ratio = match sizing {
+                Sizing::Increase => (current + DELTA).min(1.0),
+                Sizing::Decrease => (current - DELTA).max(0.1),
+            };
+            tracing::info!("adjust_monocle_height: {:?}, current={:.2}, new={:.2} (no monocle active)", sizing, current, new_ratio);
+            workspace.monocle_height_ratio = Some(new_ratio);
+        }
+
+        self.update_focused_workspace(true, true)?;
+        Ok(())
+    }
+
+    #[tracing::instrument(skip(self))]
     pub fn cycle_monocle(&mut self, direction: CycleDirection) -> eyre::Result<()> {
         tracing::info!("cycling monocle container");
 
