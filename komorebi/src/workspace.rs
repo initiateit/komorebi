@@ -626,7 +626,7 @@ impl Workspace {
                     }
 
                     // Use previous layout if available for smooth animation
-                    window.set_position_from(&monocle_rect, true, previous_layouts.first())?;
+                    window.set_position(&monocle_rect, true)?;
                 };
             } else if let Some(window) = &mut self.maximized_window {
                 window.maximize();

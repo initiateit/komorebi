@@ -21,3 +21,5 @@ new_state.txt
 new_state2.txt
 komorebi/errors.txt
 build_errors.txt
+BRANCHES.md
+.claude/settings.local.json
